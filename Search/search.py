@@ -19,6 +19,7 @@ Pacman agents (in searchAgents.py).
 
 import util
 
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -70,7 +71,62 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
+
+def generalSearch(problem, prirotyFunction, debug=False):
+    frontier = util.PriorityQueue()
+    frontier.push(item=(problem.getStartState(), [], 0), priority=0)
+    explored = set()
+
+    while not frontier.isEmpty():
+        current_node, actions_to_curr_node, cost_to_curr = frontier.pop()
+
+        if problem.isGoalState(current_node):
+            return actions_to_curr_node
+
+        if debug:
+            print('----------------------------------------------------------------')
+            print('\033[95m')  # Magenta
+            print('| Current Node\t| Cost to Current\t|')
+            print('| ------------\t| ---------------\t|')
+            print('\033[92m')  # Green
+            print(f'| {current_node}\t| {cost_to_curr}\t|')
+            print()
+            print('\033[96m')  # cyan
+            print('| Successor\t| Cost to Next\t| Actions to Next\t|')
+            print('| ---------\t| ------------\t| ---------------\t|')
+            print('\033[0m')
+
+        for successor in problem.getSuccessors(current_node):
+            successor_node, action_to_neighbour, _ = successor
+            if successor_node not in explored:
+                cost_to_neighbour = prirotyFunction(current_node, successor, cost_to_curr)
+
+                for priority, _, heap_item in frontier.heap:
+                    if successor_node == heap_item[0]:
+                        if priority <= cost_to_neighbour:
+                            break
+
+                        frontier.update(
+                            item=(
+                            successor_node, actions_to_curr_node.copy() + [action_to_neighbour], cost_to_neighbour),
+                            priority=cost_to_neighbour
+                        )
+                        break
+                else:
+                    frontier.push(
+                        item=(successor_node, actions_to_curr_node.copy() + [action_to_neighbour], cost_to_neighbour),
+                        priority=cost_to_neighbour
+                    )
+
+                if debug:
+                    print('\033[93m')  # yellow
+                    print(f'| {successor_node}\t| {cost_to_neighbour}\t| {action_to_neighbour}\t|')
+                    print('\033[0m')
+
+        explored.add(current_node)
+
 
 def depthFirstSearch(problem):
     """
@@ -86,18 +142,31 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def dfsPriorityFunction(_node, _successor_state, cost_to_node):
+        return cost_to_node - 1
+
+    return generalSearch(problem=problem, prirotyFunction=dfsPriorityFunction)
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def bfsPriorityFunction(_node, _successor_state, cost_to_node):
+        return cost_to_node + 1
+
+    return generalSearch(problem=problem, prirotyFunction=bfsPriorityFunction)
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def ucsPriorityFunction(_node, successor_state, cost_to_node):
+        _, _, step_cost = successor_state
+        # print(f'---\t Node: {_node}, Successor: {successor_state[0]}')
+        # print(f'---\t Cost: {cost_to_node}, Step Cost: {step_cost}')
+
+        return cost_to_node + step_cost
+
+    return generalSearch(problem=problem, prirotyFunction=ucsPriorityFunction)
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +175,17 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def aStarPriorityFunction(node, successor_state, cost_to_node):
+        prev_heuristic = heuristic(node, problem)
+        successor_node, _, step_cost = successor_state
+        new_heuristic = heuristic(successor_node, problem)
+
+        return cost_to_node - prev_heuristic + (step_cost + new_heuristic)
+
+    return generalSearch(problem=problem, prirotyFunction=aStarPriorityFunction)
 
 
 # Abbreviations
