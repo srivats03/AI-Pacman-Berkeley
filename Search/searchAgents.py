@@ -381,8 +381,41 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    length = max(walls.height - 2, walls.width - 2) - 1  # Longer Side
+    breadth = min(walls.height - 2, walls.width - 2) - 1  # Shorter Side
+
+    position, visitedCorners = state
+    unvisitedCornersCount = len(corners) - sum([int(visited) for visited in list(visitedCorners)])
+
+    # TODO: Find reduced form, if possible
+    if unvisitedCornersCount == 4:
+        # Rationale: Reach the closest corner and then cover rest as short side -> long side -> short side
+        return min([util.manhattanDistance(position, corner) for corner in corners]) + 2 * breadth + length
+
+    elif unvisitedCornersCount == 3:
+        # Rationale: Reach the closest corner, which is not right angled (3 points make triangle), then go 1 side each
+        cornersToVisitFirst = [
+            corner for idx, corner in enumerate(corners)
+            if not int(visitedCorners[-idx-1]) and not int(visitedCorners[idx])
+        ]
+        return min([util.manhattanDistance(position, corner) for corner in cornersToVisitFirst]) + length + breadth
+
+    elif unvisitedCornersCount == 2:
+        # Rationale: Reach the closest corner and then move to the other corner from there
+        unvisitedCorners = [corner for idx, corner in enumerate(corners) if not int(visitedCorners[idx])]
+        return min([util.manhattanDistance(position, corner) for corner in unvisitedCorners]) + \
+            util.manhattanDistance(unvisitedCorners[0], unvisitedCorners[1])
+
+    elif unvisitedCornersCount == 1:
+        # Rationale: Reach the closest corner
+        for idx, corner in enumerate(corners):
+            if not int(visitedCorners[idx]):
+                return util.manhattanDistance(position, corner)
+
+    else:
+        # Rationale: Goal State
+        return 0
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
