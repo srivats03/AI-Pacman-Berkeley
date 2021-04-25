@@ -33,6 +33,7 @@ description for details.
 
 Good luck and happy searching!
 """
+import functools
 
 from game import Directions
 from game import Agent
@@ -285,24 +286,29 @@ class CornersProblem(search.SearchProblem):
             if not startingGameState.hasFood(*corner):
                 print('Warning: no food in corner ' + str(corner))
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
-        # Please add any code here which you would like to use
-        # in initializing the problem
-        "*** YOUR CODE HERE ***"
 
     def getStartState(self):
         """
-        Returns the start state (in your state space, not the full Pacman state
-        space)
+        Returns the start state (in your state space, not the full Pacman state space)
+
+        Returns
+        -------
+        tuple
+            tuple (x, y) co-ordinates, str '0|1' * len(self.corners) representing visited corners
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        visitedCorners = '0' * len(self.corners)
+        visitedCorners = self.updateVisitedIfCorner(self.startingPosition, visitedCorners)
+
+        startState = (self.startingPosition, visitedCorners)
+
+        return startState
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        _, visitedCorners = state
+        return functools.reduce(lambda a, b: a and b, [int(c) for c in visitedCorners])
 
     def getSuccessors(self, state):
         """
@@ -319,12 +325,19 @@ class CornersProblem(search.SearchProblem):
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
+            (x, y), _ = state
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
 
-            "*** YOUR CODE HERE ***"
+            if not hitsWall:
+                successorPoistion = (nextx, nexty)
+                (_, _), visitedCorners = state  # Parent States Visited Corners
+                successorState = (successorPoistion, self.updateVisitedIfCorner(successorPoistion, visitedCorners))
+                step_cost = 1
+
+                successor = (successorState, action, step_cost)
+                successors.append(successor)
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -341,6 +354,15 @@ class CornersProblem(search.SearchProblem):
             x, y = int(x + dx), int(y + dy)
             if self.walls[x][y]: return 999999
         return len(actions)
+
+    def updateVisitedIfCorner(self, position, visitedCorners):
+        newVisitedCorners = visitedCorners
+        for idx, corner in enumerate(self.corners):
+            if position == corner:
+                newVisitedCorners = visitedCorners[:idx] + '1' + visitedCorners[idx+1:]
+                break
+
+        return newVisitedCorners
 
 
 def cornersHeuristic(state, problem):
