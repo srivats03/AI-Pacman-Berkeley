@@ -109,8 +109,8 @@ def generalSearch(problem, prirotyFunction, debug=False):
                             break
 
                         frontier.update(
-                            item=(
-                            successor_node, actions_to_curr_node.copy() + [action_to_neighbour], cost_to_neighbour),
+                            item=
+                            (successor_node, actions_to_curr_node.copy() + [action_to_neighbour], cost_to_neighbour),
                             priority=cost_to_neighbour
                         )
                         break
